@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OSM - 旅遊地圖</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css"
+    />
+
+    <style>
+      #map {
+        height: 100vh;
+        width: 100%;
+      }
+      .my-custom-emoji {
+        background: #fff;
+        filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.3));
+        border-radius: 50%;
+        padding: 10px;
+        width: 40px;
+        height: 40px;
+        border: none !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .my-custom-emoji div {
+        filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.3));
+        cursor: pointer;
+      }
+      /* 篩選器選單固定展開且可滾動 */
+      .leaflet-control-layers-list {
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 10px;
+      }
+      .leaflet-popup-content {
+        width: 200px;
+      }
+      .leaflet-control-layers {
+        border-radius: 10px !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+    <script>
+      $(function () {
+        // 1. 初始化地圖
+        var map = L.map("map").setView([24.1765545, 120.6648742], 13);
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
+          map,
+        );
+
+        // 2. 整合對照表 (Emoji + 圖片)
+        const mapConfig = {
+          大學學院: {
+            emoji: "🎓",
+            img: "https://img.vocus.cc/LIMBJ3bGnN6pGWXtPexdE1J_gVwDjk14ZkLk5ODQY_o/w:740/f:webp/plain/https://images.vocus.cc/c6057c74-ef39-4d3d-a8e8-3bd675c7740c.png",
+          },
+          畫框: {
+            emoji: "🖼️",
+            img: "https://img.vocus.cc/qIfnfDkzcDLv6uzDJLbESZlKbJmTej1Wdr39ZnAuuHo/w:740/f:webp/plain/https://images.vocus.cc/6002da92-9c7a-46ba-8427-75b7f5f1fcbb.png",
+          },
+          工具: {
+            emoji: "🔧",
+            img: "https://img.vocus.cc/8ysIERqfG9SZgt8NeWLw-R1xQ37SpdQ0AGU1D_uRbps/w:740/f:webp/plain/https://images.vocus.cc/c171d542-8003-4866-b79d-cb1b66abcb54.png",
+          },
+          公車: {
+            emoji: "🚌",
+            img: "https://img.vocus.cc/j0QIQ49mRDL2SmAyn2GVLf4ACJqTTFMARGQvWO_qVto/w:740/f:webp/plain/https://images.vocus.cc/2f13c112-f36a-400d-93a9-091255a9b593.png",
+          },
+          幸運草: {
+            emoji: "🍀",
+            img: "https://img.vocus.cc/0shBVcz7xKzvLlUPOD1uBMfzvF2uyRsMippPqXA03ag/w:740/f:webp/plain/https://images.vocus.cc/2b868d35-1052-44be-9a23-59066b7fe871.png",
+          },
+          化妝品: {
+            emoji: "💄",
+            img: "https://img.vocus.cc/_W5Np0OiX4Zl4IW2CI0nQEHqGzipFqOOZs6P0adw8Gc/w:740/f:webp/plain/https://images.vocus.cc/e8050541-ba90-486b-bb59-a3bba43fb64c.png",
+          },
+          水邊: {
+            emoji: "🌊",
+            img: "https://img.vocus.cc/iDcPWjuYsTNl2J9sEYuZFd7BoID7hZdOTZ0WJRJTNHw/w:740/f:webp/plain/https://images.vocus.cc/3f46d4b8-1fb7-461c-8edf-f2d63f0a3502.png",
+          },
+          樂園: { emoji: "🎡", img: "" },
+          車站: {
+            emoji: "🚉",
+            img: "https://img.vocus.cc/sYUgb0MffsfHFUub8Uw9ddVHh50Z9IT8lzMO55U710g/w:740/f:webp/plain/https://images.vocus.cc/579d46d7-9158-447a-a8b3-d3326fa7b329.png",
+          },
+          咖啡: {
+            emoji: "☕",
+            img: "https://img.vocus.cc/egj8X9zksb-wNcsn8jMnOTFPhsdy66JvrU8lEO9nJAo/w:740/f:webp/plain/https://images.vocus.cc/badbc6d2-b567-4039-bd6e-de7f86faa274.png",
+          },
+          咖哩: {
+            emoji: "🍛",
+            img: "https://img.vocus.cc/KRm8rcbIRyt2SsjYARPMbXQZDNvIVTcZouWjp-xnsa0/w:740/f:webp/plain/https://images.vocus.cc/32459869-9f87-4ccd-b1ea-e8602ba224eb.png",
+          },
+          拉麵: {
+            emoji: "🍜",
+            img: "https://img.vocus.cc/qAMOkC3rKvbXE1W1jS0-bZVehcb50tSdIzp_WC1ogeE/w:740/f:webp/plain/https://images.vocus.cc/0f41012b-e38b-47f7-93c4-e0cbdfffaa44.png",
+          },
+          髮圈: {
+            emoji: "🎀",
+            img: "https://img.vocus.cc/RoQwBQKeQ_uzT8_OoxSwL7RiCrDDylgEwE4f2_vJ9ec/w:740/f:webp/plain/https://images.vocus.cc/24ab356c-bb1c-4345-9a78-95fd30b119bb.png",
+          },
+          便利店: {
+            emoji: "🏪",
+            img: "https://img.vocus.cc/j-CH-t3Rmqe7I3_G8Diks3zV1CuWj85raf6m28ZrYRk/w:740/f:webp/plain/https://images.vocus.cc/cb1c6fbf-c826-43c7-b150-15b1925f397d.png",
+          },
+          洗衣店: { emoji: "🧺", img: "" },
+          剪刀: {
+            emoji: "✂️",
+            img: "https://img.vocus.cc/RqgedlyqbR5wf5uAvsP6OATAO0A1uIfzVpSESyHKmTs/w:740/f:webp/plain/https://images.vocus.cc/74910d3b-0832-4328-a0ab-c5d871350e7b.png",
+          },
+          美術館: { emoji: "🎨", img: "" },
+          海灘: {
+            emoji: "🏖️",
+            img: "https://img.vocus.cc/i5tFUxZ5cMMWRCiaS4SsgAhXfQig0WFxDD9yYupDSc4/w:740/f:webp/plain/https://images.vocus.cc/efc814cd-46d1-4efa-9e49-5cae8005ad14.png",
+          },
+          動物園: {
+            emoji: "🦁",
+            img: "https://img.vocus.cc/fdeGBxhi93UCyHOakFCuGpj52nDbiTz03qHGBCncdjc/w:740/f:webp/plain/https://images.vocus.cc/4085ea20-ed0e-4516-821c-5dbd1893da46.png",
+          },
+          甜點: {
+            emoji: "🍰",
+            img: "https://img.vocus.cc/gFlV-Ghs_6V7C2bPdVeT-tZ9UqM9yz0CHCWHV6Wp1cE/w:740/f:webp/plain/https://images.vocus.cc/e8dd9568-ebe7-49fd-83ab-2e19fe3d58b5.png",
+          },
+          森林: {
+            emoji: "🌲",
+            img: "https://img.vocus.cc/jgpGKqjHxWIXbuR4MXHj5Uat9Bi4SFfEeEvJLmZaOpQ/w:740/f:webp/plain/https://images.vocus.cc/ff1b5cab-462d-45f8-8aa0-97c67fb290f9.png",
+          },
+          超市: {
+            emoji: "🛒",
+            img: "https://img.vocus.cc/JUmpN07y7nW8fTnYjDb-Z-i-tNFBcJG-bgTo7_Yc_Yc/w:740/f:webp/plain/https://images.vocus.cc/36c55376-f4db-4f31-a306-2f809ead0e79.png",
+          },
+          郵局: {
+            emoji: "📮",
+            img: "https://img.vocus.cc/euJUNVTePn_wMGDrTTNJer4FrHKsdwFC5eYkd1l33e0/w:740/f:webp/plain/https://images.vocus.cc/22258d43-6783-413e-9585-ca54f33af29e.png",
+          },
+          飯店: {
+            emoji: "🏨",
+            img: "https://img.vocus.cc/buHMH429dohR5RMfXhwXSYZMCigJwcF1FO4L9kN9SaQ/w:740/f:webp/plain/https://images.vocus.cc/8e85af7c-eaee-4bb5-bdd5-2d35224cbbac.png",
+          },
+          義式餐廳: {
+            emoji: "🍕",
+            img: "https://img.vocus.cc/ICVmLidCjIQdrqCGT0ulJnAMTD00-sFxgfR1NLxj1JQ/w:740/f:webp/plain/https://images.vocus.cc/096a923a-c1f4-4ca7-9f2e-5dc921241e12.png",
+          },
+          路邊: {
+            emoji: "🛣️",
+            img: "https://img.vocus.cc/K_qNKYEkGt8XjnEgbpYnR2xCQ1pl4oqOwXJlzchRqxY/w:740/f:webp/plain/https://images.vocus.cc/39344194-fdff-4be4-8cdd-f83a0cb1f18b.png",
+          },
+          電影院: {
+            emoji: "🎬",
+            img: "https://img.vocus.cc/BhP7kp-L-aVWgMt0L-5C-JDsP2EBOKVCnIx5MkAHkyI/w:740/f:webp/plain/https://images.vocus.cc/bb4099b9-a628-4631-bba1-964dbe5257c7.png",
+          },
+          電器行: {
+            emoji: "🔌",
+            img: "https://img.vocus.cc/C_eZi-do4UeJ6eX1BkVcVE5V3kawj9Mju26A2ihv5v4/w:740/f:webp/plain/https://images.vocus.cc/9e1bdf18-0136-4d7f-b5c3-7252f3abfa57.png",
+          },
+          圖書館: {
+            emoji: "📚",
+            img: "https://img.vocus.cc/A2PmlAaJufhvebktDC7Kl3gT-inbz6sR0lGzw72vEY0/w:740/f:webp/plain/https://images.vocus.cc/4d0d8436-74bf-4828-8541-2633beb3f196.png",
+          },
+          壽司: {
+            emoji: "🍣",
+            img: "https://img.vocus.cc/SD5OYrmZfV7bYE-zp8Y7fuP5WgbeomyGr9qbMOQolW8/w:740/f:webp/plain/https://images.vocus.cc/f34f3511-681b-4e66-919d-165a59e84ad2.png",
+          },
+          塔可: {
+            emoji: "🌮",
+            img: "https://img.vocus.cc/s1SlOO8s7_dhQiS7oCuuvxRSR72CL-2Ux4InCICg7Qg/w:740/f:webp/plain/https://images.vocus.cc/a6ccfa28-602c-4652-ac94-6585a1bd4288.png",
+          },
+          橋梁: {
+            emoji: "🌉",
+            img: "https://img.vocus.cc/qMO-K5wFYJrv-2jqorDH5Rvm1A1XIOLk0_cpbgDsdPA/w:740/f:webp/plain/https://images.vocus.cc/aadc0ad7-b5a9-48a7-9ab3-6ecae43b3f67.png",
+          },
+          飛機: {
+            emoji: "✈️",
+            img: "https://img.vocus.cc/LZgjMAiSTzyTjCZ5TuCkhlFL_EZP_DHHl3f8DZHvPxE/w:740/f:webp/plain/https://images.vocus.cc/8ce1e0b6-bf35-4ed3-a3a6-9ecd862aa5a6.png",
+          },
+          餐廳: {
+            emoji: "🍴",
+            img: "https://img.vocus.cc/J_wD76Nc5ndCh5ZTYOYmS2Iq6KoLoCD_vggEJZXNB4I/w:740/f:webp/plain/https://images.vocus.cc/94b6f980-b4e7-4228-8256-3fc3d116939a.png",
+          },
+          泡菜: { emoji: "🥬", img: "" },
+          藥局: {
+            emoji: "💊",
+            img: "https://img.vocus.cc/XqQue5og2lsgLBwSIVmNFyTYRD4Taa5iWM9iOnGuruw/w:740/f:webp/plain/https://images.vocus.cc/5d31dffb-934f-4a5b-8221-015ac73caf42.png",
+          },
+          麵包店: {
+            emoji: "🥐",
+            img: "https://img.vocus.cc/bnU-OzqiJpvpILU70T7xJuJ_v6ZNNpqdZ5XfCmVaLHo/w:740/f:webp/plain/https://images.vocus.cc/438ac8df-09c8-4320-bacc-5604eb727597.png",
+          },
+          體育館: {
+            emoji: "🏟️",
+            img: "https://img.vocus.cc/7Qx2vpnzQhiTFawYID-YArWf_NjmFsfev1vKKbZUcRA/w:740/f:webp/plain/https://images.vocus.cc/42c30397-0b15-488c-ab1e-eef1b7810947.png",
+          },
+        };
+
+        // 3. 自動建立圖層群組 (MarkerClusterGroup)
+        var layerGroups = {};
+        for (let key in mapConfig) {
+          // 修正點：要抓 mapConfig[key].emoji 而不是整個 mapConfig[key]
+          let label = mapConfig[key].emoji + " " + key;
+          layerGroups[label] = new L.markerClusterGroup().addTo(map);
+        }
+        layerGroups["📍 其他"] = new L.markerClusterGroup().addTo(map);
+
+        // 4. 固定展開的篩選控制器
+        L.control.layers(null, layerGroups, { collapsed: false }).addTo(map);
+
+        // 5. 全選/切換功能
+        var selectAllControl = L.Control.extend({
+          options: { position: "topright" },
+          onAdd: function () {
+            var container = L.DomUtil.create(
+              "div",
+              "leaflet-bar leaflet-control",
+            );
+            container.innerHTML =
+              '<button id="toggle-all" style="padding: 5px 10px; background: white; border: none; cursor: pointer; border-radius: 4px; font-weight: bold; width: 100%;">全部切換</button>';
+
+            var isAllOn = true;
+            container.onclick = function () {
+              isAllOn = !isAllOn;
+              for (var key in layerGroups) {
+                if (isAllOn) {
+                  map.addLayer(layerGroups[key]);
+                } else {
+                  map.removeLayer(layerGroups[key]);
+                }
+              }
+              document.getElementById("toggle-all").innerText = isAllOn
+                ? "全部關閉"
+                : "全部開啟";
+            };
+            return container;
+          },
+        });
+        map.addControl(new selectAllControl());
+
+        // 6. 抓取 CSV 資料
+        const csvUrl =
+          "https://docs.google.com/spreadsheets/d/e/2PACX-1vTRw6E3bOomfLruJDEw1Z6eQepkdC0nFBDtqodJ1wFm-gwYV1nJBE9FhyXusGcShWFM63DckmTQVQet/pub?gid=87253575&single=true&output=csv";
+
+        fetch(csvUrl)
+          .then((response) => response.text())
+          .then((data) => {
+            const rows = data.split("\n").filter((row) => row.trim() !== "");
+            const dataRows = rows.slice(1);
+
+            dataRows.forEach((row) => {
+              const columns = row.split(",");
+              const lat = parseFloat(columns[0]);
+              const lng = parseFloat(columns[1]);
+              const name = columns[2] ? columns[2].trim() : "";
+
+              if (!isNaN(lat) && !isNaN(lng)) {
+                let myEmoji = "📍";
+                let myImgUrl = "";
+                let targetGroup = layerGroups["📍 其他"];
+
+                // 尋找符合的分類
+                for (let key in mapConfig) {
+                  if (name.includes(key)) {
+                    myEmoji = mapConfig[key].emoji;
+                    myImgUrl = mapConfig[key].img;
+                    targetGroup = layerGroups[myEmoji + " " + key];
+                    break;
+                  }
+                }
+
+                const emojiIcon = L.divIcon({
+                  className: "my-custom-emoji",
+                  html: `<div style="font-size: 24px;">${myEmoji}</div>`,
+                  iconSize: [30, 30],
+                  iconAnchor: [15, 15],
+                  popupAnchor: [0, -10],
+                });
+
+                const popupContent = `
+            <div style="text-align:center;">
+              <b>${name}</b><br>
+              ${myImgUrl ? `<img src="${myImgUrl}" style="width:100%; max-width:200px; margin-top:8px; border-radius:5px;">` : "<i>目前尚無照片</i>"}
+            </div>`;
+
+                const newMarker = L.marker([lat, lng], {
+                  icon: emojiIcon,
+                }).bindPopup(popupContent);
+
+                // 加入對應的聚合圖層
+                targetGroup.addLayer(newMarker);
+              }
+            });
+          })
+          .catch((error) => console.error("抓取失敗:", error));
+      });
+    </script>
+  </body>
+</html>
